@@ -11,7 +11,7 @@
 
 #define HAL_ENABLE 1
 #if HAL_ENABLE 
-#include "util/HAL.h"
+// #include "util/HAL.h"
 #else
 #if ARDUINO >= 100
 #include <Arduino.h>       // for delayMicroseconds, digitalPinToBitMask, etc

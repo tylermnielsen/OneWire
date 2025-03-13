@@ -146,8 +146,25 @@ sample code bearing this copyright.
 
 #define HAL_ENABLED 1
 #if HAL_ENABLED
-#include "util/HAL.h"
+#include "HAL.h"
 #include "OneWire.h"
+
+#define delayMicroseconds(time)         delayMicroseconds_hal(time)
+#define PIN_TO_BASEREG(pin)             (0)
+#define PIN_TO_BITMASK(pin)             (pin)
+#define IO_REG_TYPE                     unsigned int
+#define IO_REG_BASE_ATTR
+#define IO_REG_MASK_ATTR
+#define DIRECT_READ(base, pin)          digitalRead_hal(pin)
+#define DIRECT_WRITE_LOW(base, pin)     digitalWrite_hal(pin, 0) 
+#define DIRECT_WRITE_HIGH(base, pin)    digitalWrite_hal(pin, 1)
+#define DIRECT_MODE_INPUT(base, pin)    pinMode_hal(pin, 0) 
+#define DIRECT_MODE_OUTPUT(base, pin)   pinMode_hal(pin, 1)
+
+#ifndef pgm_read_byte
+#define pgm_read_byte(addr) (*(const uint8_t *)(addr))
+#endif
+
 #else
 #include <Arduino.h>
 #include "OneWire.h"
@@ -158,7 +175,7 @@ sample code bearing this copyright.
 
 #ifdef ARDUINO_ARCH_ESP32
 // due to the dual core esp32, a critical section works better than disabling interrupts
-#  define noInterrupts() {portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;portENTER_CRITICAL(&mux)
+#  define noInterrupts_hal() {portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;portENTER_CRITICAL(&mux)
 #  define interrupts() portEXIT_CRITICAL(&mux);}
 // for info on this, search "IRAM_ATTR" at https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/general-notes.html 
 #  define CRIT_TIMING IRAM_ATTR
@@ -169,7 +186,7 @@ sample code bearing this copyright.
 
 void OneWire::begin(uint8_t pin)
 {
-	pinMode(pin, INPUT);
+	pinMode_hal(pin, INPUT);
 	bitmask = PIN_TO_BITMASK(pin);
 	baseReg = PIN_TO_BASEREG(pin);
 #if ONEWIRE_SEARCH
@@ -191,25 +208,25 @@ uint8_t CRIT_TIMING OneWire::reset(void)
 	uint8_t r;
 	uint8_t retries = 125;
 
-	noInterrupts();
+	noInterrupts_hal();
 	DIRECT_MODE_INPUT(reg, mask);
-	interrupts();
+	interrupts_hal();
 	// wait until the wire is high... just in case
 	do {
 		if (--retries == 0) return 0;
 		delayMicroseconds(2);
 	} while ( !DIRECT_READ(reg, mask));
 
-	noInterrupts();
+	noInterrupts_hal();
 	DIRECT_WRITE_LOW(reg, mask);
 	DIRECT_MODE_OUTPUT(reg, mask);	// drive output low
-	interrupts();
+	interrupts_hal();
 	delayMicroseconds(480);
-	noInterrupts();
+	noInterrupts_hal();
 	DIRECT_MODE_INPUT(reg, mask);	// allow it to float
 	delayMicroseconds(70);
 	r = !DIRECT_READ(reg, mask);
-	interrupts();
+	interrupts_hal();
 	delayMicroseconds(410);
 	return r;
 }
@@ -224,20 +241,20 @@ void CRIT_TIMING OneWire::write_bit(uint8_t v)
 	__attribute__((unused)) volatile IO_REG_TYPE *reg IO_REG_BASE_ATTR = baseReg;
 
 	if (v & 1) {
-		noInterrupts();
+		noInterrupts_hal();
 		DIRECT_WRITE_LOW(reg, mask);
 		DIRECT_MODE_OUTPUT(reg, mask);	// drive output low
 		delayMicroseconds(10);
 		DIRECT_WRITE_HIGH(reg, mask);	// drive output high
-		interrupts();
+		interrupts_hal();
 		delayMicroseconds(55);
 	} else {
-		noInterrupts();
+		noInterrupts_hal();
 		DIRECT_WRITE_LOW(reg, mask);
 		DIRECT_MODE_OUTPUT(reg, mask);	// drive output low
 		delayMicroseconds(65);
 		DIRECT_WRITE_HIGH(reg, mask);	// drive output high
-		interrupts();
+		interrupts_hal();
 		delayMicroseconds(5);
 	}
 }
@@ -252,14 +269,14 @@ uint8_t CRIT_TIMING OneWire::read_bit(void)
 	__attribute__((unused)) volatile IO_REG_TYPE *reg IO_REG_BASE_ATTR = baseReg;
 	uint8_t r;
 
-	noInterrupts();
+	noInterrupts_hal();
 	DIRECT_MODE_OUTPUT(reg, mask);
 	DIRECT_WRITE_LOW(reg, mask);
 	delayMicroseconds(3);
 	DIRECT_MODE_INPUT(reg, mask);	// let pin float, pull up will raise
 	delayMicroseconds(10);
 	r = DIRECT_READ(reg, mask);
-	interrupts();
+	interrupts_hal();
 	delayMicroseconds(53);
 	return r;
 }
@@ -278,10 +295,10 @@ void OneWire::write(uint8_t v, uint8_t power /* = 0 */) {
 	OneWire::write_bit( (bitMask & v)?1:0);
     }
     if ( !power) {
-	noInterrupts();
+	noInterrupts_hal();
 	DIRECT_MODE_INPUT(baseReg, bitmask);
 	DIRECT_WRITE_LOW(baseReg, bitmask);
-	interrupts();
+	interrupts_hal();
     }
 }
 
@@ -289,10 +306,10 @@ void OneWire::write_bytes(const uint8_t *buf, uint16_t count, bool power /* = 0 
   for (uint16_t i = 0 ; i < count ; i++)
     write(buf[i]);
   if (!power) {
-    noInterrupts();
+    noInterrupts_hal();
     DIRECT_MODE_INPUT(baseReg, bitmask);
     DIRECT_WRITE_LOW(baseReg, bitmask);
-    interrupts();
+    interrupts_hal();
   }
 }
 
@@ -336,9 +353,9 @@ void OneWire::skip()
 
 void OneWire::depower()
 {
-	noInterrupts();
+	noInterrupts_hal();
 	DIRECT_MODE_INPUT(baseReg, bitmask);
-	interrupts();
+	interrupts_hal();
 }
 
 #if ONEWIRE_SEARCH
@@ -516,7 +533,7 @@ bool OneWire::search(uint8_t *newAddr, bool search_mode /* = true */)
 // Dow-CRC using polynomial X^8 + X^5 + X^4 + X^0
 // Tiny 2x16 entry CRC table created by Arjen Lentz
 // See http://lentz.com.au/blog/calculating-crc-with-a-tiny-32-entry-lookup-table
-static const uint8_t PROGMEM dscrc2x16_table[] = {
+static const uint8_t dscrc2x16_table[] = {
 	0x00, 0x5E, 0xBC, 0xE2, 0x61, 0x3F, 0xDD, 0x83,
 	0xC2, 0x9C, 0x7E, 0x20, 0xA3, 0xFD, 0x1F, 0x41,
 	0x00, 0x9D, 0x23, 0xBE, 0x46, 0xDB, 0x65, 0xF8,
@@ -604,7 +621,7 @@ uint16_t OneWire::crc16(const uint8_t* input, uint16_t len, uint16_t crc)
 
 // undef defines for no particular reason
 #ifdef ARDUINO_ARCH_ESP32
-#  undef noInterrupts() {portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;portENTER_CRITICAL(&mux)
+#  undef noInterrupts_hal() {portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;portENTER_CRITICAL(&mux)
 #  undef interrupts() portEXIT_CRITICAL(&mux);}
 #endif
 // for info on this, search "IRAM_ATTR" at https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/general-notes.html 
