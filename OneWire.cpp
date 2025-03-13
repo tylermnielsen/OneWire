@@ -144,9 +144,21 @@ sample code bearing this copyright.
 //--------------------------------------------------------------------------
 */
 
+#define HAL_ENABLED 1
+#if HAL_ENABLED
+#include "util/HAL.h"
+#include "OneWire.h"
+#else
 #include <Arduino.h>
 #include "OneWire.h"
 #include "util/OneWire_direct_gpio.h"
+#endif
+
+
+
+
+
+
 
 #ifdef ARDUINO_ARCH_ESP32
 // due to the dual core esp32, a critical section works better than disabling interrupts
