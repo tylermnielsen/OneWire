@@ -154,11 +154,7 @@ sample code bearing this copyright.
 #include "util/OneWire_direct_gpio.h"
 #endif
 
-
-
-
-
-
+#define INPUT 0
 
 #ifdef ARDUINO_ARCH_ESP32
 // due to the dual core esp32, a critical section works better than disabling interrupts
