@@ -74,16 +74,30 @@ class OneWire
 #endif
 
     void (*delayMicroseconds_hal)(uint64_t); 
+    void (*interrupts_hal)(); 
+    void (*noInterrupts_hal)(); 
   public:
     OneWire() {
         this->delayMicroseconds_hal = default_delayMicroseconds_hal; 
+        this->interrupts_hal = default_interrupts_hal; 
+        this->noInterrupts_hal = default_noInterrupts_hal; 
     }
     OneWire(uint8_t pin) {
         this->delayMicroseconds_hal = default_delayMicroseconds_hal; 
+        this->interrupts_hal = default_interrupts_hal; 
+        this->noInterrupts_hal = default_noInterrupts_hal; 
         begin(pin); 
     }
     OneWire(uint8_t pin, void (*delayMicroseconds_hal)(uint64_t)){
         this->delayMicroseconds_hal = delayMicroseconds_hal; 
+        this->interrupts_hal = default_interrupts_hal; 
+        this->noInterrupts_hal = default_noInterrupts_hal; 
+        begin(pin); 
+    }
+    OneWire(uint8_t pin, void (*interrupts_hal)(), void (*noInterrupts_hal)()){
+        this->delayMicroseconds_hal = default_delayMicroseconds_hal; 
+        this->interrupts_hal = interrupts_hal; 
+        this->noInterrupts_hal = noInterrupts_hal; 
         begin(pin); 
     }
     void begin(uint8_t pin);

@@ -30,8 +30,8 @@ void digitalWrite_hal(uint8_t pinNumber, uint8_t status);
 
 void pinMode_hal(uint8_t pinNumber, uint8_t pinMode);
 
-void noInterrupts_hal();
+void default_noInterrupts_hal();
 
-void interrupts_hal();
+void default_interrupts_hal();
 
 #endif

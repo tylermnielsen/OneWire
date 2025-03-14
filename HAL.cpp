@@ -112,7 +112,7 @@ void interrupts_toggle(uint8_t on){
     }
 }
 
-void noInterrupts_hal(){
+void default_noInterrupts_hal(){
     #if DEFAULT && 0
     noInterrupts(); 
     #else
@@ -120,7 +120,7 @@ void noInterrupts_hal(){
     #endif 
 }
 
-void interrupts_hal(){
+void default_interrupts_hal(){
     #if DEFAULT && 0
     interrupts();
     #else
