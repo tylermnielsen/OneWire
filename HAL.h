@@ -22,7 +22,7 @@
 //   OUTPUT_8MA      = 0x6,
 //   OUTPUT_12MA     = 0x7,
 // } PinMode;
-void delayMicroseconds_hal(uint64_t delay_us);
+void default_delayMicroseconds_hal(uint64_t delay_us);
 
 int digitalRead_hal(uint8_t pin);
 

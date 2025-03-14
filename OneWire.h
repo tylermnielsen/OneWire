@@ -11,7 +11,7 @@
 
 #define HAL_ENABLE 1
 #if HAL_ENABLE 
-// #include "util/HAL.h"
+#include "HAL.h"
 #else
 #if ARDUINO >= 100
 #include <Arduino.h>       // for delayMicroseconds, digitalPinToBitMask, etc
@@ -73,9 +73,19 @@ class OneWire
     bool LastDeviceFlag;
 #endif
 
+    void (*delayMicroseconds_hal)(uint64_t); 
   public:
-    OneWire() { }
-    OneWire(uint8_t pin) { begin(pin); }
+    OneWire() {
+        this->delayMicroseconds_hal = default_delayMicroseconds_hal; 
+    }
+    OneWire(uint8_t pin) {
+        this->delayMicroseconds_hal = default_delayMicroseconds_hal; 
+        begin(pin); 
+    }
+    OneWire(uint8_t pin, void (*delayMicroseconds_hal)(uint64_t)){
+        this->delayMicroseconds_hal = delayMicroseconds_hal; 
+        begin(pin); 
+    }
     void begin(uint8_t pin);
 
     // Perform a 1-Wire reset cycle. Returns 1 if a device responds

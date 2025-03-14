@@ -17,7 +17,7 @@ typedef enum {
 } PinMode;
 #endif
 
-void delayMicroseconds_hal(uint64_t delay_us){
+void default_delayMicroseconds_hal(uint64_t delay_us){
     busy_wait_us(delay_us); 
 }
 
